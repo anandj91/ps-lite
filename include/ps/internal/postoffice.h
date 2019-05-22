@@ -6,6 +6,8 @@
 #include <mutex>
 #include <algorithm>
 #include <vector>
+#include <unordered_map>
+#include <memory>
 #include "ps/range.h"
 #include "ps/internal/env.h"
 #include "ps/internal/customer.h"
