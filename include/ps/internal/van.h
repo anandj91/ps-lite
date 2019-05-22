@@ -14,6 +14,7 @@
 #include <unordered_set>
 #include "ps/base.h"
 #include "ps/internal/message.h"
+#include "ps/internal/threadsafe_pqueue.h"
 namespace ps {
 class Resender;
 
@@ -54,6 +55,11 @@ class Van {
      * \return the number of bytes sent. -1 if failed
      */
     int Send(const Message &msg);
+
+    /**
+     * TODO: comment
+     */
+    void Push(const Message& msg);
 
     /**
      * \brief return my node
@@ -127,6 +133,9 @@ class Van {
     /** thread function for heartbeat */
     void Heartbeat();
 
+    /** thread function for sending */
+    void Sending();
+
     // node's address string (i.e. ip:port) -> node id
     // this map is updated when ip:port is received for the first time
     std::unordered_map<std::string, int> connected_nodes_;
@@ -144,6 +153,8 @@ class Van {
     std::unique_ptr<std::thread> receiver_thread_;
     /** the thread for sending heartbeat */
     std::unique_ptr<std::thread> heartbeat_thread_;
+    /** the thread for sending messages */
+    std::unique_ptr<std::thread> sender_thread_;
     std::vector<int> barrier_count_;
     /** msg resender */
     Resender *resender_ = nullptr;
@@ -193,6 +204,7 @@ class Van {
     int heartbeat_timeout_ = heartbeat_timeout_val ? atoi(heartbeat_timeout_val) : 0;
 
     DISALLOW_COPY_AND_ASSIGN(Van);
+    ThreadsafePQueue send_queue_;
 };
 }  // namespace ps
 #endif  // PS_INTERNAL_VAN_H_

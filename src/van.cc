@@ -335,6 +335,9 @@ void Van::Start(int customer_id) {
       // start heartbeat thread
       heartbeat_thread_ = std::unique_ptr<std::thread>(
               new std::thread(&Van::Heartbeat, this));
+      // start sender thread
+      sender_thread_ = std::unique_ptr<std::thread>(
+              new std::thread(&Van::Heartbeat, this));
     }
     init_stage++;
   }
@@ -352,7 +355,10 @@ void Van::Stop() {
   CHECK_NE(ret, -1);
   receiver_thread_->join();
   init_stage = 0;
-  if (!is_scheduler_) heartbeat_thread_->join();
+  if (!is_scheduler_) {
+    heartbeat_thread_->join();
+    sender_thread_->join();
+  }
   if (resender_) delete resender_;
   ready_ = false;
   connected_nodes_.clear();
@@ -372,6 +378,22 @@ int Van::Send(const Message& msg) {
     PS_VLOG(2) << msg.DebugString();
   }
   return send_bytes;
+}
+
+void Van::Push(const Message& msg) {
+  send_queue_.Push(msg);
+}
+
+void Van::Sending() {
+  while (true) {
+    Message msg;
+    send_queue_.WaitAndPop(&msg);
+    Send(msg);
+    if (!msg.meta.control.empty() &&
+        msg.meta.control.cmd == Control::TERMINATE) {
+      break;
+    }
+  }
 }
 
 void Van::Receiving() {
@@ -430,6 +452,7 @@ void Van::PackMeta(const Meta& meta, char** meta_buf, int* buf_size) {
   pb.set_push(meta.push);
   pb.set_request(meta.request);
   pb.set_simple_app(meta.simple_app);
+  pb.set_priority(meta.priority);
   pb.set_customer_id(meta.customer_id);
   for (auto d : meta.data_type) pb.add_data_type(d);
   if (!meta.control.empty()) {
@@ -471,6 +494,7 @@ void Van::UnpackMeta(const char* meta_buf, int buf_size, Meta* meta) {
   meta->request = pb.request();
   meta->push = pb.push();
   meta->simple_app = pb.simple_app();
+  meta->priority = pb.priority();
   meta->body = pb.body();
   meta->customer_id = pb.customer_id();
   meta->data_type.resize(pb.data_type_size());
