@@ -337,7 +337,7 @@ void Van::Start(int customer_id) {
               new std::thread(&Van::Heartbeat, this));
       // start sender thread
       sender_thread_ = std::unique_ptr<std::thread>(
-              new std::thread(&Van::Heartbeat, this));
+              new std::thread(&Van::Sending, this));
     }
     init_stage++;
   }
