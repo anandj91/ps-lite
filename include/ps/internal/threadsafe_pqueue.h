@@ -56,12 +56,4 @@ class ThreadsafePQueue {
 
 }  // namespace ps
 
-// bool TryPop(T& value) {
-//   std::lock_guard<std::mutex> lk(mut);
-//   if(data_queue.empty())
-//     return false;
-//   value=std::move(data_queue.front());
-//   data_queue.pop();
-//   return true;
-// }
 #endif  // PS_INTERNAL_THREADSAFE_PQUEUE_H_
