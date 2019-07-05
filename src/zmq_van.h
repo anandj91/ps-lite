@@ -111,8 +111,11 @@ class ZMQVan : public Van {
     if (my_node_.id != Node::kEmpty) {
       std::string my_id = "ps" + std::to_string(my_node_.id);
       zmq_setsockopt(sender, ZMQ_IDENTITY, my_id.data(), my_id.size());
-      int hwm = 1;
-      zmq_setsockopt(sender, ZMQ_SNDHWM, &hwm, sizeof(hwm));
+      const char* watermark = Environment::Get()->find("DMLC_PS_WATER_MARK");
+      if (watermark) {
+        const int hwm = atoi(watermark);
+        zmq_setsockopt(sender, ZMQ_SNDHWM, &hwm, sizeof(hwm));
+      }
     }
     // connect
     std::string addr = "tcp://" + node.hostname + ":" + std::to_string(node.port);
