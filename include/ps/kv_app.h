@@ -289,6 +289,8 @@ struct KVMeta {
   int timestamp;
   /** \brief the customer id of worker */
   int customer_id;
+  /** \brief priority */
+  int priority;
 };
 
 /**
@@ -379,6 +381,7 @@ void KVServer<Val>::Process(const Message& msg) {
   meta.sender    = msg.meta.sender;
   meta.timestamp = msg.meta.timestamp;
   meta.customer_id = msg.meta.customer_id;
+  meta.priority  = msg.meta.priority;
   KVPairs<Val> data;
   int n = msg.data.size();
   if (n) {
@@ -405,6 +408,7 @@ void KVServer<Val>::Response(const KVMeta& req, const KVPairs<Val>& res) {
   msg.meta.head        = req.cmd;
   msg.meta.timestamp   = req.timestamp;
   msg.meta.recver      = req.sender;
+  msg.meta.priority    = req.priority;
   if (res.keys.size()) {
     msg.AddData(res.keys);
     msg.AddData(res.vals);
